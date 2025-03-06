@@ -4,8 +4,20 @@ declare(strict_types=1);
 
 
 try {
-    // Disable SSL verification for localhost (not recommended for production)
+    // Proxy settings
+    $proxyUrl = "http://wsa-ln10.npu.np.work:3128"; // Replace with your proxy URL and port
+    $proxyUser = "user.name"; // Replace with your proxy username
+    $proxyPass = "PassWord"; // Replace with your proxy password
+
+    // Create the context with proxy and basic authentication
+    $auth = base64_encode("$proxyUser:$proxyPass");
+
     $options = [
+        "http" => [
+            "proxy" => $proxyUrl,
+            "request_fulluri" => true,
+            "header" => "Proxy-Authorization: Basic $auth",
+        ],
         "ssl" => [
             "verify_peer" => false,
             "verify_peer_name" => false,
