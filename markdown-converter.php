@@ -8,112 +8,85 @@ require 'vendor/autoload.php';
 $parsedown = new Parsedown();
 
 $markdown = <<<EOT
-### Understanding Feature Flags in Laravel: A Comprehensive Guide
+Ось перелік команд Git для виконання завдань, які ти описав:
 
-Feature flags, also known as feature toggles, are a powerful development pattern that allows developers to enable or disable features in a system without deploying new code. This approach is particularly useful in modern software development, where continuous integration and continuous deployment (CI/CD) are crucial.
-
-### What Are Feature Flags?
-
-Feature flags are conditional statements within your codebase that control whether a specific feature is active or inactive. This control can be managed through various methods, such as configuration files, admin interfaces, or specialized tools. Feature flags allow developers to release new features safely, perform A/B testing, and gradually roll out changes to users, all without the need for frequent redeployments.
-
-### Key Benefits of Using Feature Flags in Laravel
-
-1. **Safe and Controlled Deployments**: Deploy your code to production confidently, knowing that new features can be toggled on or off at any time.
-2. **Continuous Delivery**: Release code continuously without waiting for every feature to be fully developed and tested.
-3. **Effective A/B Testing**: Implement and test different versions of a feature to determine which performs better.
-4. **Instant Rollback**: Quickly disable a problematic feature without the need for a full rollback or redeployment.
-5. **Targeted User Segmentation**: Roll out features to specific user groups, such as beta testers, to gather feedback before a full release.
-
-### Implementing Feature Flags in Laravel
-
-Laravel developers have several options for implementing feature flags, ranging from using pre-built packages to creating custom solutions. Below are some effective methods to get started.
-
-#### 1. **Using a Laravel Package for Feature Flags**
-
-One of the simplest ways to implement feature flags in Laravel is by using a package like [spatie/laravel-feature-flags](https://github.com/spatie/laravel-feature-flags). This package provides an easy-to-use interface for managing feature toggles in your Laravel application.
-
-**Installation**:
+### 1. **Проаналізувати різницю в гілках dev/stage/prod**
 ```bash
-composer require spatie/laravel-feature-flags
+# Подивитися різницю між develop і stage
+git diff develop stage
+
+# Подивитися різницю між stage і prod
+git diff stage prod
+
+# Подивитися різницю між develop і prod
+git diff develop prod
+
+# Подивитися останні коміти, які є в одній гілці, але відсутні в іншій
+git log develop..stage --oneline
+git log stage..prod --oneline
+git log develop..prod --oneline
 ```
 
-**Example Usage**:
-```php
-use Spatie\FeatureFlags\Feature;
+### 2. **Створити список ділянок коду, що мають бути різними в залежності від оточення**
+```bash
+# Знайти всі файли, що відрізняються між гілками
+git diff --name-only develop stage
+git diff --name-only stage prod
+git diff --name-only develop prod
 
-if (Feature::accessible('new-feature')) {
-    // The feature is enabled, execute related code
+# Перевірити змінні середовища та конфігураційні файли
+git diff develop stage -- config/
+git diff stage prod -- config/
+git diff develop prod -- config/
+```
+> **Далі потрібно проаналізувати, які з цих файлів варто винести в `.env` або зробити через `if(env(...))` у коді.**
+
+### 3. **Обгорнути змінний код умовами**
+- Якщо використовується Laravel, то варто винести різний код у `.env` та використовувати `env()`:
+```php
+if (env('APP_ENV') === 'production') {
+    // Код для продакшну
 } else {
-    // The feature is disabled, fallback to old behavior
+    // Код для стейджу або девелопу
 }
 ```
+- Якщо це Docker, то варто винести змінні в `docker-compose.override.yml` для різних середовищ.
 
-#### 2. **Creating a Custom Feature Flag System in Laravel**
+### 4. **Консультація з девопсами щодо перестворення гілок stage/develop від prod**
+```bash
+# Створення нових stage і develop на основі prod
+git checkout prod
+git checkout -b new-develop
+git checkout -b new-stage
 
-For those who prefer a custom solution, creating your own feature flag system in Laravel is straightforward. Here’s a step-by-step guide:
-
-1. **Create a Migration for a `feature_flags` Table**:
-```php
-Schema::create('feature_flags', function (Blueprint $table) {
-    $table->id();
-    $table->string('feature');
-    $table->boolean('enabled');
-    $table->timestamps();
-});
+# (Обговорити, як зберегти потрібні зміни у stage/develop перед їх перестворенням)
 ```
 
-2. **Develop a Model and Service to Manage Feature Flags**:
-```php
-class FeatureFlag extends Model {
-    protected $fillable = ['feature', 'enabled'];
-}
+### 5. **Вирішити, коли найкраще видаляти гілки**
+- Найкращий момент для видалення гілок — **після завершення основного циклу розробки**, коли всі зміни з `develop` та `stage` вже **змерджено у `prod`**.
 
-class FeatureFlagService {
-    public function isEnabled(string $feature): bool {
-        return FeatureFlag::where('feature', $feature)->value('enabled');
-    }
-}
+```bash
+# Перевірити, чи всі зміни потрапили в продакшн
+git log develop..prod --oneline
+git log stage..prod --oneline
+
+# Якщо всі зміни є в продакшні, можна видаляти гілки:
+git branch -D develop  # Локально
+git push origin --delete develop  # Віддалено
+git branch -D stage
+git push origin --delete stage
 ```
 
-3. **Integrate the Service into Your Application**:
-```php
-$featureFlagService = app(FeatureFlagService::class);
+---
 
-if ($featureFlagService->isEnabled('new-feature')) {
-    // Enable the feature
-} else {
-    // Disable the feature
-}
-```
+## **Результати, які ми отримаємо**
+✅ **Ліквідуємо cherry-picks** — більше не буде потреби вручну перетягувати зміни між гілками.  
+✅ **Ліквідуємо постійні конфлікти** — код буде однаковий у всіх середовищах, крім специфічних налаштувань.  
+✅ **Ліквідуємо помилки через відмінності оточень** — конфігурація буде винесена у змінні середовища.  
 
-#### 3. **Environment-Based Feature Flags in Laravel**
+Якщо ще щось потрібно уточнити чи доповнити — запитуй! 🚀
 
-For simpler use cases, environment variables can be an effective way to manage feature flags.
 
-**Example**:
-1. **Set a Flag in `.env`**:
-```plaintext
-NEW_FEATURE_ENABLED=true
-```
-
-2. **Check the Flag in Your Code**:
-```php
-if (env('NEW_FEATURE_ENABLED', false)) {
-    // Feature is enabled
-} else {
-    // Feature is disabled
-}
-```
-
-### Best Practices for Feature Flags in Laravel
-
-- **Keep Feature Flags Temporary**: Remove feature flags once the associated feature is fully deployed and stable.
-- **Use Clear and Descriptive Names**: Name your feature flags descriptively to avoid confusion and ensure easy management.
-- **Document the Purpose of Each Flag**: Always document the purpose and expected removal date of each feature flag.
-
-### Conclusion
-
-Feature flags are an essential tool in modern software development, offering Laravel developers the ability to deploy and manage features safely and efficiently. Whether using a package or implementing a custom solution, feature flags in Laravel can significantly enhance your development workflow, making it easier to manage feature releases, perform A/B testing, and ensure a smooth user experience.
 EOT;
 
 $html = $parsedown->text($markdown);
