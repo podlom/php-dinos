@@ -5,7 +5,7 @@ declare(strict_types=1);
 
 try {
     // Proxy settings
-    $proxyUrl = "http://wsa-ln10.npu.np.work:3128"; // Replace with your proxy URL and port
+    $proxyUrl = "http://local-proxy.net:3128"; // Replace with your proxy URL and port
     $proxyUser = "user.name"; // Replace with your proxy username
     $proxyPass = "PassWord"; // Replace with your proxy password
 
@@ -25,7 +25,7 @@ try {
     ];
 
     // Fetch the HTML content from the URL
-    $url = "https://zoning.npu.np.work/api/debug/env";
+    $url = "http://localhost/api/debug/env";
     $htmlContent = @file_get_contents($url, false, stream_context_create($options));
 
     // Check if the request was successful

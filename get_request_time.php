@@ -13,7 +13,7 @@ try {
     ];
 
     // Fetch the HTML content from the URL
-    $url = "https://zoning.npu.np.work/api/debug/env";
+    $url = "http://localhost/api/debug/env";
     $htmlContent = @file_get_contents($url, false, stream_context_create($options));
 
     // Check if the request was successful
