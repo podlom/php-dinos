@@ -39,7 +39,7 @@ class HtmlPreFormatter implements CodeFormatterStrategy
 {
     public function format(string $language, string $code): string
     {
-        return sprintf('<pre>%s</pre>', htmlspecialchars($code));
+        return sprintf('<pre><code class="language-php">' . PHP_EOL . '&lt;?php' . PHP_EOL . '%s</code></pre>', htmlspecialchars($code));
     }
 }
 
